@@ -3,34 +3,40 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
-import { assert } from "console";
+import { ContractTransaction } from "ethers";
 import { ethers } from "hardhat";
 
 async function main() {
-  const [owner] = await ethers.getSigners();
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with the account:", deployer.address);
 
   const MainContract = await ethers.getContractFactory("Scoring");
-  const Scoring = await MainContract.connect(owner).deploy();
-  assert(await Scoring.deployed(), "contract was not deployed");
+  const Scoring = await MainContract.connect(deployer).deploy();
+  await Scoring.deployed();
+  console.log("Scoring deployed to:", Scoring.address);
+
+  const data: Array<number> = [1, 2, 1, 1, 3, 3, 1, 2, 2, 3];
+  let tx: ContractTransaction = await Scoring.connect(deployer).newTestData(
+    data
+  );
+  await tx.wait();
 
   const Token = await ethers.getContractFactory("NFT");
-  const NFTToken = await Token.deploy(
+  const NFTToken = await Token.connect(deployer).deploy(
     Scoring.address,
     "JPYC Hackathon NFT Token",
     "JPYCH"
   );
-  assert(await NFTToken.deployed(), "contract was not dpeloyed");
+  await NFTToken.deployed();
+  console.log("NFT deployed to:", NFTToken.address);
 
-  // NFTのmetadataの情報を更新します
-  await Scoring.connect(owner).changeNFTTokenURI(
+  tx = await Scoring.connect(deployer).changeNFTAddress(NFTToken.address);
+  await tx.wait();
+
+  tx = await Scoring.connect(deployer).changeNFTTokenURI(
     "https://jsonkeeper.com/b/O2V4"
   );
-  // NFTアドレスの更新
-  await Scoring.connect(owner).changeNFTAddress(NFTToken.address);
-
-  // 問題を登録する
-  const data: Array<number> = [0, 1, 1, 0, 1, 0, 0, 1, 1, 0];
-  await Scoring.connect(owner).newTestData(data);
+  await tx.wait();
 }
 
 // We recommend this pattern to be able to use async/await everywhere
