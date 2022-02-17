@@ -16,10 +16,14 @@ contract NFT is ERC721URIStorage {
     }
 
     function mintToken(address _user, string memory tokenURI) external returns (uint256) {
-        _tokenIds.increment();
-        uint256 newItemId = _tokenIds.current();
-        _mint(_user, newItemId);
-        _setTokenURI(newItemId, tokenURI);
-        return newItemId;
+        if (msg.sender == owner) {
+            _tokenIds.increment();
+            uint256 newItemId = _tokenIds.current();
+            _mint(_user, newItemId);
+            _setTokenURI(newItemId, tokenURI);
+            return newItemId;
+        } else {
+            console.log("You have no mint authority.");
+        }
     }
 }

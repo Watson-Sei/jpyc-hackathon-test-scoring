@@ -3,23 +3,34 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
+import { assert } from "console";
 import { ethers } from "hardhat";
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const [owner] = await ethers.getSigners();
 
-  // We get the contract to deploy
-  const Greeter = await ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+  const MainContract = await ethers.getContractFactory("Scoring");
+  const Scoring = await MainContract.connect(owner).deploy();
+  assert(await Scoring.deployed(), "contract was not deployed");
 
-  await greeter.deployed();
+  const Token = await ethers.getContractFactory("NFT");
+  const NFTToken = await Token.deploy(
+    Scoring.address,
+    "JPYC Hackathon NFT Token",
+    "JPYCH"
+  );
+  assert(await NFTToken.deployed(), "contract was not dpeloyed");
 
-  console.log("Greeter deployed to:", greeter.address);
+  // NFTのmetadataの情報を更新します
+  await Scoring.connect(owner).changeNFTTokenURI(
+    "https://jsonkeeper.com/b/O2V4"
+  );
+  // NFTアドレスの更新
+  await Scoring.connect(owner).changeNFTAddress(NFTToken.address);
+
+  // 問題を登録する
+  const data: Array<number> = [0, 1, 1, 0, 1, 0, 0, 1, 1, 0];
+  await Scoring.connect(owner).newTestData(data);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -63,11 +63,21 @@ describe("JPYC Hackathon Scoring Contract Test", function () {
     );
 
     // 7割合格回答を提出してNFTをmint
-    const answerData: Array<number> = [1, 2, 1, 1, 3, 3, 1, 1, 1, 3];
+    let answerData: Array<number> = [1, 2, 1, 1, 3, 3, 1, 1, 1, 3];
     await Scoring.connect(addr1).Judge(answerData);
     assert(
       (await NFTToken.balanceOf(addr1.address)).toString() === "1",
       "was not mint"
+    );
+
+    // 7割合格以下回答を提出してNFT発行されないことを確認
+    answerData = [2, 1, 1, 1, 3, 3, 1, 1, 1, 3];
+    await Scoring.connect(addr1).Judge(answerData);
+
+    // 不正にNFT発行できないか確認
+    await NFTToken.connect(addr1).mintToken(
+      addr1.address,
+      "https://jsonkeeper.com/b/O2V4"
     );
   });
 });
